@@ -1,4 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { ModuleDeclaration } from "estree";
+import { Model } from "mongoose";
 
 import {Profile} from './profile.model';
 
@@ -6,36 +9,50 @@ import {Profile} from './profile.model';
 export class ProfilesService{
     private profiles: Profile[] = [];
 
+    constructor(@InjectModel('Profile') private readonly profileModel: Model<Profile>,
+    ) {}
 
-    createProfile(name: string, about: string, experience: string, education: string, role: string){
-        const profileID = Math.random().toString();
-        const newProfile = new Profile(profileID, name, about, experience, education, role);
-        this.profiles.push(newProfile);
-        return profileID;
+
+    async createProfile(name: string, about: string, experience: string, education: string, role: string){
+        const newProfile = new this.profileModel({
+            name:name, 
+            about: about, 
+            experience: experience, 
+            education: education, 
+            role: role,
+        });
+        const result = await newProfile.save();
+        return result.id as string;
     }
 /*
-    getProfiles(){
-        return [...this.profiles];
+    async getProfiles(){
+        const profiles = await this.profileModel.find().exec();
+        return profiles as Profile[];
     }
 */
-    getMyProfile(profileID: string){
-        const profile = this.profiles.find((prod) => prod.profileID === profileID);
+    async getMyProfile(profileID: string){
+        let profile;
+        try{
+            profile = await this.profileModel.findById(profileID);
+        }catch(error){
+            throw new NotFoundException('Could not find profile');
+        }
         if(!profile)
         {
-            throw new NotFoundException('Could not find product.');
+            throw new NotFoundException('Could not find profile.');
         }
-        return {...profile};
+        return profile;
 
     }
 
-    updateProfile(profileID: string, name:string, about:string, experience:string, education:string, role:string){
-        const profileIndex = this.profiles.findIndex((prod) => prod.profileID === profileID);
-        const profile = this.profiles[profileIndex];
-        if(!profile)
+    async updateProfile(profileID: string, name:string, about:string, experience:string, education:string, role:string){
+        //const profileIndex = this.profiles.findIndex((prod) => prod.profileID === profileID);
+        //const profile = this.profiles[profileIndex];
+        const updatedProfile = await this.profileModel.findById(profileID);
+        if(!updatedProfile)
         {
-            throw new NotFoundException('Could not find product');
+            throw new NotFoundException('Could not find profile');
         }
-        const updatedProfile = profile;
         if(name)
         {
             updatedProfile.name = name;
@@ -56,7 +73,7 @@ export class ProfilesService{
         {
             updatedProfile.role = role;
         }
-        this.profiles[profileIndex] = updatedProfile;
+        updatedProfile.save();
         return null;
     }
 
