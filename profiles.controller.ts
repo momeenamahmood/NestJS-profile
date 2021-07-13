@@ -7,34 +7,35 @@ export class ProfilesController{
     constructor(private readonly profilesService: ProfilesService) {}
 
     @Post()
-    addProfile(
+    async addProfile(
         @Body('Name') profileName: string,
         @Body('About') about: string,
         @Body('Experience') experience: string,
         @Body('Education') education: string,
         @Body('Role') role: string,
         ){
-        const generatedID = this.profilesService.createProfile(profileName, about, experience, education,role);
+        const generatedID = await this.profilesService.createProfile(profileName, about, experience, education,role);
         return {id: generatedID};
     }
 
     /*
     @Get()
-    getAllProfiles(){
-        return this.profilesService.getProfiles();
+    async getAllProfiles(){
+        const profiles = await this.profilesService.getProfiles();
+        return profiles;
     }
     */
 
     @Get(':id')
-    getProfile(
+    async getProfile(
         @Param('id') profileID: string,
     ){
-        return this.profilesService.getMyProfile(profileID);
-
+        const profile = await this.profilesService.getMyProfile(profileID);
+        return profile;
     }
 
     @Patch(':id')
-    updateProfile(
+    async updateProfile(
         @Param('id') profileID: string,
         @Body('Name') name:string,
         @Body('About') about:string,
@@ -42,10 +43,7 @@ export class ProfilesController{
         @Body('Education') education:string,
         @Body('Role') role:string,
     ){
-        this.profilesService.updateProfile(profileID, name, about, experience, education, role);
+        await this.profilesService.updateProfile(profileID, name, about, experience, education, role);
     }
-
-
-
 
 }
